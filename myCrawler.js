@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const { scrollPageToBottom } = require('puppeteer-autoscroll-down')
+const { scrollPageToBottom } = require('puppeteer-autoscroll-down');
+const e = require('express');
 
 // var URL = "https://www.youtube.com/watch?v=Z8nbb0ELUl0";
-var URL = "https://youtube.com/watch?v=6qQWZmk5_WY"
+const URL = "https://youtube.com/watch?v=6qQWZmk5_WY"
 //var URL = "https://www.youtube.com/watch?v=kxcQ7MUeLeI";
 
 function run() {
@@ -13,7 +14,7 @@ function run() {
                 headless: false,
                 defaultViewport: null,
                 //dumpio: true,
-                args: ['--window-size=1024,768'],
+                args: ['--window-size=1024,1024'],
                 ignoreDefaultArgs: ['--mute-audio'],
             }
             );
@@ -27,17 +28,6 @@ function run() {
             const scrollDelay = 100 // default
 
             console.log('start crawling');
-            /*
-             while(true) {
-                const lastPosition = await scrollPageToBottom(page, scrollStep, scrollDelay)
-                await page.waitForResponse(
-                    response => {
-                        console.log(response.status);
-                    }
-                )    
-                console.log(`lastPosition: ${lastPosition}`);
-            }
-            */
 
             let isLoadingAvailable = true // Your condition-to-stop
             var limitcnt = 0;
@@ -72,13 +62,13 @@ function run() {
                     // printLogAt_67(msg.args())
             });
 
-            await page.waitForTimeout(3000);
+            // await page.waitForTimeout(3000);
 
-            const winner = await Promise.race([
-                page.waitForSelector('#more-replies'),
-            ])
+            // const winner = await Promise.race([
+            //     page.waitForSelector('#more-replies'),
+            // ])
 
-            await page.click(winner._remoteObject.description);
+            // await page.click(winner._remoteObject.description);
 
             //await page.qu.querySelectorAll('#more-replies').click();  
 
@@ -92,27 +82,40 @@ function run() {
                 console.log("loading comments")
                 let scrollHeight = 0;
                 while (true) {
-                    // var f_total_comment_count = ""
-                    // //get total comment count
-                    // let comment_count = document.querySelectorAll('#comments > #sections > #header > ytd-comments-header-renderer > #title > h2 > yt-formatted-string > span')
-                    // f_total_comment_count = comment_count[0].textContent
-
+                    console.log("loading reply of comment...")
                     let moreReplies = document.querySelectorAll('#more-replies');
-                    if (moreReplies && moreReplies.length > 0) {
-                        moreReplies.forEach(async (item) => {
-                            item.click()
-                            
-                        });
-                    }
+                    moreReplies.forEach(async (item) => {
+                        // item.scrollIntoView({
+                        //     behavior: "smooth", block: 'end', inline: 'end'
+                        // })
+                        item.click()
+                        // await wait(400);
+                    })
+
+                    await wait(500);
+
+                    
                     let commentsNode = document.querySelectorAll('ytd-comment-thread-renderer')
-                    //scroll down to bottom
+
+                    commentsNode[commentsNode.length - 18].scrollIntoView({
+                        behavior: "smooth", block: 'end', inline: 'end'
+                    })
+
+                    commentsNode[commentsNode.length - 12].scrollIntoView({
+                        behavior: "smooth", block: 'end', inline: 'end'
+                    })
+                    await wait(1000);
+
+                    commentsNode[commentsNode.length - 6].scrollIntoView({
+                        behavior: "smooth", block: 'end', inline: 'end'
+                    })
+                    await wait(1000);
+
                     commentsNode[commentsNode.length - 1].scrollIntoView({
                         behavior: "smooth", block: 'end', inline: 'end'
                     })
-                   
-                    await window.scrollTo(0, document.scrollingElement.scrollHeight); //scroll to load more comments
-                    await wait(400) // wait 400ms
-                    // await scroller(page, scrollStep, scrollDelay);
+                    window.scrollTo(0, document.scrollingElement.scrollHeight); //scroll to load more comments
+                    await wait(1000) // wait 400ms
                     if (document.scrollingElement.scrollHeight > scrollHeight) {
                         scrollHeight = document.scrollingElement.scrollHeight //if can scroll 
                     } else {
@@ -122,31 +125,43 @@ function run() {
                 
             })
 
-            // let tmp = item.parentComponent.querySelector("#expander > .expander-header > .less-button > #less-replies > a > #button > yt-formatted-string").innerText || false
-                            // console.log("tmp",tmp)
-                            // if (tmp) {
-                            //     //wait response for more replies
-                            //     await page.waitForResponse(
-                            //         response => {
-                            //             console.log(response.status());
-                            //             // TODO: 크롤링 종료를 위한 graceful 처리.
-                            //             if (response.status() === 200 || response.status() === 204) {
-                
-                            //             }
-                            //             else {
-                            //                 // isLoadingAvailable = false;
-                            //             }
-                                        
-                            //             return true;
-                            //         }
-                            //     )
-                            //     let countReplyOfReply = parseInt(tmp.innerText.split(" ")[1])
-                            //     if (countReplyOfReply !== NaN && countReplyOfReply > 10) {
-                            //         console.log("click more...")
-                            //         console.log(item.parentComponent.querySelector("#expander > #expander-content > #content"))
-                            //         // item.parentComponent.querySelector("#expander > #expander-content > #content")[0].lastChild.click()
-                            //     }
-                            // }
+            // await page.waitForTimeout(3000);
+
+            // let loadReply = page.evaluate( async () => {
+            //     window.scrollTo(0, 3000)
+            //     console.log("loading reply of comment...")
+            //     let moreReplies = document.querySelectorAll('#more-replies');
+            //     moreReplies.forEach(async (item) => {
+                    
+            //         item.click()
+            //         // await wait(400);
+            //     })
+            // })
+
+            await page.waitForTimeout(3000);
+
+
+            let loadMoreReply = await page.evaluate(() => {
+                const wait = (ms) => new Promise(res => setTimeout(res, ms)); //delay time(ms)
+                console.log("loading more reply")
+                let moreReplies = document.querySelectorAll("#replies");
+                if (moreReplies && moreReplies.length > 0) {
+                    moreReplies.forEach((item, index) => {
+                        if (item.childNodes.length > 0) {
+                            let tmp = item.querySelector("ytd-comment-replies-renderer > #expander > #expander-contents > #contents").lastChild 
+                            if (tmp && tmp.tagName === "YTD-CONTINUATION-ITEM-RENDERER") {
+                                tmp.querySelector("#button > ytd-button-renderer").click();
+                            } else {
+                                console.log("Loaded all comment replies")
+                            }
+
+                        }
+                    })
+                }
+
+
+            })      
+
 
             await page.waitForTimeout(3000);
 
@@ -158,7 +173,7 @@ function run() {
                 var f_total_comment_count = ""
                 //get total comment count
                 let comment_count = document.querySelectorAll('#comments > #sections > #header > ytd-comments-header-renderer > #title > h2 > yt-formatted-string > span')
-                f_total_comment_count = comment_count[0].textContent
+                f_total_comment_count = comment_count[0].textContent.trim()
                 // console.log(document.querySelectorAll('#contents > ytd-comment-thread-renderer').length, comment_count[0].textContent)
 
 
@@ -187,13 +202,13 @@ function run() {
                 let user_id = document.querySelector('#container > #text-container > yt-formatted-string > a');
                 
                 //my code
-                f_user_id = user_id.innerText;
+                f_user_id = user_id.innerText.trim();
                 
                 let total_sts = document.querySelector("#owner-sub-count");
                 
                 // console.log(total_sts.innerText)
                 
-                f_subscription_count = total_sts.textContent;
+                f_subscription_count = total_sts.textContent.trim();
                 // f_subscription_count = total_sts.innerText;
                 
                 
@@ -201,20 +216,20 @@ function run() {
                 let description = document.querySelector("#description > yt-formatted-string ");
                 
                 
-                f_description = description.textContent;
+                f_description = description.textContent.trim();
                 // f_description = description.innerText;
                 // console.log(f_description)
                 
                 
                 let likecnt = document.querySelector("#top-level-buttons-computed > ytd-toggle-button-renderer > a > yt-formatted-string");
-                f_like = likecnt.textContent;
+                f_like = likecnt.textContent.trim();
                 // f_like = likecnt.innerText;
 
                 // console.log(f_like)
 
 
                 let total_data_count = document.querySelector("#count > ytd-video-view-count-renderer > .view-count");
-                f_total_data_count = total_data_count.textContent;
+                f_total_data_count = total_data_count.textContent.trim();
                 // f_total_data_count = total_data_count.innerText;
                 // console.log(f_total_data_count)
 
@@ -245,14 +260,14 @@ function run() {
                         //     console.log("bug")
                         // }
 
-                        let f_comment = comment.textContent;
+                        let f_comment = comment.textContent.trim();
                         // console.log(f_comment);
 
                         let author = citem.querySelector('#comment > #body > #main > #header > #header-author > h3 > #author-text > span');
-                        let f_author = author.innerText;
+                        let f_author = author.textContent.trim();
                         // console.log(f_author);
                         let vote = citem.querySelector('#comment > #body > #main > #action-buttons > #toolbar > #vote-count-middle');
-                        let f_votecnt = vote.innerText;
+                        let f_votecnt = vote.innerText.trim();
 
                         let childreply_list = citem.querySelector('#replies');
                         // console.log("replies count:" + childreply_list.length);
@@ -283,18 +298,18 @@ function run() {
                             childcnt = 2; // 재세팅 id
                             childreply.forEach((childitem) => {
                                 let ci_author = childitem.querySelector('#body > #main > #header > #header-author > h3 > #author-text > span');
-                                f_ci_author = ci_author.textContent;
+                                f_ci_author = ci_author.innerText.trim();
                                 // console.log("f_ci_author:" + f_ci_author);
                                 // let ci_comment = childitem.querySelector('#body > #main > #expander > #content > #content-text')
                                 let ci_comment = childitem.querySelector('#body > #main > #comment-content > #expander > #content > #content-text')
 
-                                f_ci_comment = ci_comment.textContent;
+                                f_ci_comment = ci_comment.innerText.trim();
                                 // f_ci_comment = ci_comment.innerText;
 
                                 // console.log("f_ci_comment:" + f_ci_comment);
                                 let ci_vote = childitem.querySelector('#body > #main > #action-buttons > #toolbar > #vote-count-middle')
                                 // f_ci_votecnt = ci_vote.innerText;
-                                f_ci_votecnt = ci_vote.textContent;
+                                f_ci_votecnt = ci_vote.innerText.trim();
 
                                 // console.log("f_ci_votecnt:" + f_ci_votecnt);
 
@@ -353,10 +368,3 @@ function logJSON(urls) {
     });
 }
 
-// const printLog = (logType) => {
-//     return (mes) => {
-//         console.log(`${logType} ${mes}`)
-//     }
-// }
-
-// const printLogAt_67 = printLog("[67]")
