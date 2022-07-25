@@ -1,13 +1,15 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { scrollPageToBottom } = require('puppeteer-autoscroll-down');
-const e = require('express');
 
 // var URL = "https://www.youtube.com/watch?v=Z8nbb0ELUl0";
-const URL = "https://youtube.com/watch?v=6qQWZmk5_WY"
+// const URL = "https://youtube.com/watch?v=6qQWZmk5_WY"
+// const URL = "https://www.youtube.com/watch?v=K9_VFxzCuQ0"
+const URL = "https://www.youtube.com/watch?v=DcCISK3sCYg"
+
 //var URL = "https://www.youtube.com/watch?v=kxcQ7MUeLeI";
 
-function run() {
+function run(url) {
     return new Promise(async (resolve, reject) => {
         try {
             const browser = await puppeteer.launch({
@@ -81,7 +83,13 @@ function run() {
                 // document.querySelector('#more-replies').forEach((item) => {item.click()}) //click #more-replies
                 console.log("loading comments")
                 let scrollHeight = 0;
-                while (true) {
+                let flag = true;
+
+                setTimeout(() => {
+                    flag = false;
+                }, 300000);
+
+                while (flag) {
                     console.log("loading reply of comment...")
                     let moreReplies = document.querySelectorAll('#more-replies');
                     moreReplies.forEach(async (item) => {
@@ -101,6 +109,8 @@ function run() {
                         behavior: "smooth", block: 'end', inline: 'end'
                     })
 
+                    await wait(1000);
+
                     commentsNode[commentsNode.length - 12].scrollIntoView({
                         behavior: "smooth", block: 'end', inline: 'end'
                     })
@@ -119,7 +129,7 @@ function run() {
                     if (document.scrollingElement.scrollHeight > scrollHeight) {
                         scrollHeight = document.scrollingElement.scrollHeight //if can scroll 
                     } else {
-                        break;
+                        flag = false;
                     }
                 }
                 
@@ -144,7 +154,7 @@ function run() {
             let loadMoreReply = await page.evaluate(() => {
                 const wait = (ms) => new Promise(res => setTimeout(res, ms)); //delay time(ms)
                 console.log("loading more reply")
-                let moreReplies = document.querySelectorAll("#replies");
+                let moreReplies = document.querySelectorAll("#replies"); 
                 if (moreReplies && moreReplies.length > 0) {
                     moreReplies.forEach((item, index) => {
                         if (item.childNodes.length > 0) {
@@ -362,9 +372,8 @@ run().then(logJSON).catch(console.error);
 function logJSON(urls) {
     var name = URL.split("=")[1]
     // console.log(urls);
-    fs.writeFile(`${name}.json`, JSON.stringify(urls[0]),'utf8', function(err) {
+    fs.writeFile(`${name}.json`, JSON.stringify(urls[0], null, "\t"),'utf8', function(err) {
         console.log(err);
-        throw err;
     });
 }
 
